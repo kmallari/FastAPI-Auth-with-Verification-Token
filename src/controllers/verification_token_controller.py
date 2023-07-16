@@ -1,4 +1,6 @@
 from datetime import datetime
+
+from db.models.user import User
 from src.repositories import verification_token_repo, users_repo
 from fastapi import HTTPException, status
 

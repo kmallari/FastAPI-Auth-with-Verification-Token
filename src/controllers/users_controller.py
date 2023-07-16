@@ -56,7 +56,9 @@ def create_user(user: User):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail="Email already exists."
             )
-        raise HTTPException(status_code=400, detail="Something went wrong.")
+        raise HTTPException(
+            status_code=400, detail={"message": "Something went wrong", "error": str(e)}
+        )
 
 
 def login(email: str, password: str):

@@ -41,15 +41,7 @@ def create_user(user: User):
             user.email, get_hashed_password(user.password)
         )
         verification_token_repo.create_verification_token(new_user.id)
-        return {
-            "message": "hello world",
-            "user": {
-                "id": new_user.id,
-                "email": new_user.email,
-                "is_verified": new_user.is_verified,
-                "created_at": new_user.created_at,
-            },
-        }
+        return new_user
 
     except Exception as e:
         if "Duplicate entry" in str(e) and "\\'user.ix_user_email\\'" in str(e):
@@ -57,7 +49,8 @@ def create_user(user: User):
                 status_code=status.HTTP_409_CONFLICT, detail="Email already exists."
             )
         raise HTTPException(
-            status_code=400, detail={"message": "Something went wrong", "error": str(e)}
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": "Something went wrong", "error": str(e)},
         )
 
 

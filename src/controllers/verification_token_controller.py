@@ -40,15 +40,7 @@ def verify_user(user_id: str, token: str):
     verification_token_repo.verify_user(user.id)
     verification_token_repo.delete_user_verification_tokens(user.id)
 
-    return {
-        "message": "User verified successfully",
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "is_verified": user.is_verified,
-            "created_at": user.created_at,
-        },
-    }
+    return {"ok": True}
 
 
 def retrieve_new_verification_token(user: User):
@@ -69,12 +61,4 @@ def retrieve_new_verification_token(user: User):
         verification_token_repo.delete_user_verification_tokens(user.id)
 
     verification_token_repo.create_verification_token(user.id)
-    return {
-        "message": "Verification email sent successfully",
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "is_verified": user.is_verified,
-            "created_at": user.created_at,
-        },
-    }
+    return {"ok": True}

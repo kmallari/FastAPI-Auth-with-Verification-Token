@@ -1,7 +1,7 @@
 fastapi==0.100.0
 passlib==1.7.4
 pydantic==1.10.11
-python-dotenv==1.0.0
+python-dotenv==0.21.1
 python_jose==3.3.0
 giSQLAlchemy==1.4.41
 sqlmodel==0.0.8

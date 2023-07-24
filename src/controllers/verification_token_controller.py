@@ -5,7 +5,7 @@ from src.repositories import verification_token_repo, users_repo
 from fastapi import HTTPException, status
 
 
-def verify_user(user_id: str, token: str):
+async def verify_user(user_id: str, token: str):
     if not token or not user_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -43,7 +43,7 @@ def verify_user(user_id: str, token: str):
     return {"ok": True}
 
 
-def retrieve_new_verification_token(user: User):
+async def retrieve_new_verification_token(user: User):
     if user.is_verified:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="User already verified"

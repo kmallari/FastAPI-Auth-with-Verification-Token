@@ -1,3 +1,5 @@
+import uuid
+
 from sqlmodel import Session, select
 
 from db.models.user import User

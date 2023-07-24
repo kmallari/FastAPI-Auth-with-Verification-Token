@@ -1,4 +1,5 @@
 import re
+import uuid
 
 from db.models.user import User
 from src.repositories import users_repo, verification_token_repo
@@ -15,7 +16,7 @@ from src.utils.user_utils import (
 )
 
 
-def create_user(user: User):
+async def create_user(user: User):
     if not user.email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Email is required"
@@ -54,7 +55,7 @@ def create_user(user: User):
         )
 
 
-def login(email: str, password: str):
+async def login(email: str, password: str):
     user = users_repo.get_user_by_email(email)
     if not user:
         raise HTTPException(

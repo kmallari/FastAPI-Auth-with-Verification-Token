@@ -6,4 +6,4 @@ python_jose==3.3.0
 Requests==2.31.0
 SQLAlchemy==1.4.41
 sqlmodel==0.0.8
-starlette==0.30.0
+sendgrid==6.10.0

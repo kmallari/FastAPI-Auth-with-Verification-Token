@@ -4,7 +4,6 @@ from src.utils.auth_utils import send_email
 
 app = FastAPI()
 
-
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 
@@ -16,4 +15,4 @@ async def root():
 
 @app.get("/test")
 async def test():
-    return await send_email("lemjuidump+test@gmail.com")
+    return await send_email("lemjuidump+test@gmail.com", "312321")

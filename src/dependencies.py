@@ -1,3 +1,7 @@
+"""
+This file contains all the constants used in the project.
+"""
+
 from typing import Annotated
 
 from fastapi import Header, HTTPException, Depends, status

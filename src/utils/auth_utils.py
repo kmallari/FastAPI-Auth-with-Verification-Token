@@ -380,22 +380,20 @@ def verification_email_template(code: str):
 async def send_email(recipient: str, code: str):
     sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
     from_email = Email(SENDGRID_EMAIL)  # Change to your verified sender
+    print(SENDGRID_API_KEY, SENDGRID_EMAIL)
     to_email = To(recipient)  # Change to your recipient
     subject = "cashr Account Verification Code"
     # send html content
     content = Content(
         "text/html",
-        verification_email_template(code),
+        # verification_email_template(code),
+        verification_email_template(code)
     )
     mail = Mail(from_email, to_email, subject, content)
-
     # Get a JSON-ready representation of the Mail object
     mail_json = mail.get()
-
     # Send an HTTP POST request to /mail/send
     response = sg.client.mail.send.post(request_body=mail_json)
-    print(response.status_code)
-    print(response.headers)
     return {"res": response}
 
 

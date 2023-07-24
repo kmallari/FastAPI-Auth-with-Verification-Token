@@ -8,7 +8,7 @@ from db.models.user import User
 from src.dependencies import get_current_active_user
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login", scheme_name="JWT")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", scheme_name="JWT")
 
 
 @router.post("/google")

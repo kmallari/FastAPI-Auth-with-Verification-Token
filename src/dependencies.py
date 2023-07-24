@@ -32,7 +32,7 @@ async def get_query_token(token: str):
         )
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login", scheme_name="JWT")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", scheme_name="JWT")
 
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> User:

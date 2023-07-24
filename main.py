@@ -15,4 +15,4 @@ async def root():
 
 @app.get("/test")
 async def test():
-    return await send_email("lemjuidump+test@gmail.com", "312321")
+    return await send_email("lemjuidump+tester@gmail.com", "233122")

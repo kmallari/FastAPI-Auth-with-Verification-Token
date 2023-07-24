@@ -1,5 +1,4 @@
 import requests
-from src.repositories import auth_repo
 from src.constants import (
     GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET,
@@ -22,6 +21,7 @@ from src.utils.auth_utils import (
     verify_password,
     create_access_token,
     create_refresh_token,
+    send_email
 )
 
 from datetime import datetime
@@ -80,9 +80,6 @@ async def google(code: str):
             user_info["email_verified"],
         )
 
-    # Generate a JWT token with user information
-    print("user", user)
-
     return {
         "access_token": create_access_token(user.email),
         "refresh_token": create_refresh_token(user.email),
@@ -108,13 +105,16 @@ async def create_user(user: User):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Password must have a minimum eight characters, at least one uppercase letter, one lowercase "
-            "letter and one number.",
+                   "letter and one number.",
         )
     try:
         new_user = users_repo.create_user(
             user.email, get_hashed_password(user.password)
         )
-        auth_repo.create_verification_token(new_user.id)
+        code = auth_repo.create_verification_token(new_user.id)
+        print(code)
+        await send_email(user.email, code.token)
+        print("SUCCESS")
         return new_user
 
     except Exception as e:
@@ -168,7 +168,7 @@ async def verify_user(user_id: str, token: str):
         )
 
     if verification_token.expires_at < round(
-        (datetime.now() - datetime(1970, 1, 1)).total_seconds()
+            (datetime.now() - datetime(1970, 1, 1)).total_seconds()
     ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Token expired"
@@ -196,7 +196,7 @@ async def retrieve_new_verification_token(user: User):
 
     if verification_token:
         if verification_token.expires_at > round(
-            (datetime.now() - datetime(1970, 1, 1)).total_seconds()
+                (datetime.now() - datetime(1970, 1, 1)).total_seconds()
         ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Token not expired"

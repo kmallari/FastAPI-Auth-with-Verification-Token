@@ -38,14 +38,10 @@ async def google(code: str):
         "grant_type": "authorization_code",
     }
 
-    start = time.time()
     token_response = requests.post(token_url, data=token_payload)
     token_response.raise_for_status()
     access_token = token_response.json()["access_token"]
-    end = time.time()
-    print(f"Time taken: {end - start}")
 
-    start = time.time()
     # Get user info using the access token
     userinfo_url = "https://www.googleapis.com/oauth2/v3/userinfo"
     userinfo_response = requests.get(
@@ -54,14 +50,7 @@ async def google(code: str):
     userinfo_response.raise_for_status()
     user_info = userinfo_response.json()
     end = time.time()
-    print(f"Time taken: {end - start}")
 
-    print(user_info)
-    # Process user_info as needed
-
-    # Check if user is in the database
-    # If not, create a new user
-    # If yes, update the user's information
     user = auth_repo.check_user_exists_with_email(user_info["email"])
 
     if not user:

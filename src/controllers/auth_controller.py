@@ -101,9 +101,7 @@ async def create_user(user: User):
             user.email, get_hashed_password(user.password)
         )
         code = auth_repo.create_verification_token(new_user.id)
-        print(code)
         await send_email(user.email, code.token)
-        print("SUCCESS")
         return new_user
 
     except Exception as e:

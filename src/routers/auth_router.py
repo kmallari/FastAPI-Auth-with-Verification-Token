@@ -14,7 +14,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", scheme_name="JWT")
 @router.post("/google")
 async def google_login(request: Request, code: str):
     # Exchange the authorization code with an access token
-    print("code: ", code)
     return await auth_controller.google(code)
 
 

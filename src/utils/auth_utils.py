@@ -13,6 +13,7 @@ REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 ALGORITHM = "HS256"
 JWT_SECRET_KEY = os.environ["JWT_SECRET_KEY"]  # should be kept secret
 JWT_REFRESH_SECRET_KEY = os.environ["JWT_REFRESH_SECRET_KEY"]  # should be kept secret
+WEBSITE_NAME = "cashr"
 
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -130,7 +131,7 @@ def verification_email_template(code: str):
         opacity: 0;
       "
     >
-      Verify your account in https://cashr.klukode.dev using the code in this
+      Verify your account in https://{WEBSITE_NAME}.klukode.dev using the code in this
       email
     </div>
     <!-- end preheader -->
@@ -215,7 +216,7 @@ def verification_email_template(code: str):
                 <p style="margin: 0">
                   Tap the button below to verify your account. If you didn't
                   create an account with
-                  <a href="https://cashr.klukode.dev">cashr</a>, you can safely
+                  <a href="{CLIENT_URL}">{WEBSITE_NAME}</a>, you can safely
                   delete this email.
                 </p>
               </td>

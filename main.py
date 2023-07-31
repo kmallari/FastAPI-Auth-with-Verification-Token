@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from src.routers import users_router as users, auth_router as auth
 from src.utils.auth_utils import send_email
 
+
 app = FastAPI()
 
 app.include_router(users.router, prefix="/users", tags=["users"])

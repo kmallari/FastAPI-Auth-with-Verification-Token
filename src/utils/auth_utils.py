@@ -1,12 +1,55 @@
-import sendgrid
-from sendgrid.helpers.mail import Mail, Email, To, Content
-from src.constants import SENDGRID_API_KEY, SENDGRID_EMAIL, CLIENT_URL
-from passlib.context import CryptContext
+"""
+This module provides utility functions for user authentication and token generation.
+
+Functions:
+    verification_email_template(code: str) -> str:
+        Generate an HTML template for the verification email containing the provided code.
+
+    send_email(recipient: str, code: str) -> dict:
+        Send an email to the specified recipient containing the verification code.
+
+    get_hashed_password(password: str) -> str:
+        Hash the provided password using the bcrypt algorithm.
+
+    verify_password(password: str, hashed_pass: str) -> bool:
+        Verify the provided password against the hashed password.
+
+    get_expires_delta(expires_delta: int = None) -> datetime:
+        Get the expiration time for access and refresh tokens.
+
+    create_access_token(subject: Union[str, Any], expires_delta: int = None) -> str:
+        Create an access token for the specified subject.
+
+    create_refresh_token(subject: Union[str, Any], expires_delta: int = None) -> str:
+        Create a refresh token for the specified subject.
+
+Constants:
+    ACCESS_TOKEN_EXPIRE_MINUTES (int): The default expiration time for access tokens in minutes.
+    REFRESH_TOKEN_EXPIRE_MINUTES (int): The default expiration time for refresh tokens in minutes.
+    ALGORITHM (str): The algorithm used for encoding tokens.
+    JWT_SECRET_KEY (str): The secret key used for encoding access tokens.
+    JWT_REFRESH_SECRET_KEY (str): The secret key used for encoding refresh tokens.
+    WEBSITE_NAME (str): The name of the website used in the verification email.
+
+Global Variables:
+    password_context (CryptContext): An instance of CryptContext for hashing passwords.
+
+Note:
+    The JWT_SECRET_KEY and JWT_REFRESH_SECRET_KEY should be kept secret and stored securely,
+    as they are crucial for token generation and decoding.
+
+"""
 
 import os
 from datetime import datetime, timedelta
 from typing import Union, Any
+
+import sendgrid
 from jose import jwt
+from passlib.context import CryptContext
+from sendgrid.helpers.mail import Mail, Email, To, Content
+
+from src.constants import SENDGRID_API_KEY, SENDGRID_EMAIL, CLIENT_URL
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 99999999  # 30 minutes
 REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
@@ -19,6 +62,15 @@ password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def verification_email_template(code: str):
+    """
+    Generate an HTML template for the verification email containing the provided code.
+
+    Parameters:
+        code (str): The verification code to be included in the email template.
+
+    Returns:
+        str: The HTML template with the verification code included.
+    """
     return f"""
 <!DOCTYPE html>
 <html>
@@ -379,7 +431,20 @@ def verification_email_template(code: str):
 
 
 async def send_email(recipient: str, code: str):
-    sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
+    """
+    Send an email to the specified recipient containing the verification code.
+
+    Parameters:
+        recipient (str): The email address of the recipient.
+        code (str): The verification code to be included in the email.
+
+    Returns:
+        dict: A dictionary containing the response from the email service.
+
+    Raises:
+        Any errors raised by the email service.
+    """
+    sendgrid_client = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
     from_email = Email(SENDGRID_EMAIL)  # Change to your verified sender
     to_email = To(recipient)  # Change to your recipient
     subject = "cashr Account Verification Code"
@@ -393,26 +458,65 @@ async def send_email(recipient: str, code: str):
     # Get a JSON-ready representation of the Mail object
     mail_json = mail.get()
     # Send an HTTP POST request to /mail/send
-    response = sg.client.mail.send.post(request_body=mail_json)
+    response = sendgrid_client.client.mail.send.post(request_body=mail_json)
     return {"res": response}
 
 
 def get_hashed_password(password: str) -> str:
+    """
+    Hash the provided password using the bcrypt algorithm.
+
+    Parameters:
+        password (str): The password to be hashed.
+
+    Returns:
+        str: The hashed password.
+    """
     return password_context.hash(password)
 
 
 def verify_password(password: str, hashed_pass: str) -> bool:
+    """
+    Verify the provided password against the hashed password.
+
+    Parameters:
+        password (str): The password to be verified.
+        hashed_pass (str): The hashed password to compare against.
+
+    Returns:
+        bool: True if the password matches the hashed password, False otherwise.
+    """
     return password_context.verify(password, hashed_pass)
 
 
 def get_expires_delta(expires_delta: int = None) -> datetime:
+    """
+    Get the expiration time for access and refresh tokens.
+
+    Parameters:
+        expires_delta (int, optional): The time delta in minutes to set the expiration.
+            If None, the default expiration value will be used.
+
+    Returns:
+        datetime: The expiration datetime for the token.
+    """
     if expires_delta is not None:
         return datetime.utcnow() + expires_delta
-    else:
-        return datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    return datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
 
 def create_access_token(subject: Union[str, Any], expires_delta: int = None) -> str:
+    """
+    Create an access token for the specified subject.
+
+    Parameters:
+        subject (Union[str, Any]): The subject for whom the token is being created.
+        expires_delta (int, optional): The time delta in minutes to set the expiration.
+            If None, the default expiration value will be used.
+
+    Returns:
+        str: The encoded access token.
+    """
     expires_delta = get_expires_delta(expires_delta)
     to_encode = {"exp": expires_delta, "sub": str(subject)}
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, ALGORITHM)
@@ -420,6 +524,17 @@ def create_access_token(subject: Union[str, Any], expires_delta: int = None) -> 
 
 
 def create_refresh_token(subject: Union[str, Any], expires_delta: int = None) -> str:
+    """ "
+    Create a refresh token for the specified subject.
+
+    Parameters:
+        subject (Union[str, Any]): The subject for whom the token is being created.
+        expires_delta (int, optional): The time delta in minutes to set the expiration.
+            If None, the default expiration value will be used.
+
+    Returns:
+        str: The encoded refresh token.
+    """
     expires_delta = get_expires_delta(expires_delta)
     to_encode = {"exp": expires_delta, "sub": str(subject)}
     encoded_jwt = jwt.encode(to_encode, JWT_REFRESH_SECRET_KEY, ALGORITHM)

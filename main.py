@@ -14,6 +14,6 @@ async def root():
     return {"ok": True}
 
 
-@app.get("/test")
+@app.post("/test")
 async def test():
     return await send_email("lemjuidump+tester@gmail.com", "233122")

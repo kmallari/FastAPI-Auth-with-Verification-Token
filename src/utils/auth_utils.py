@@ -42,9 +42,17 @@ Note:
 
 import os
 from datetime import datetime, timedelta
+from typing import Dict
+from typing import Optional
 from typing import Union, Any
 
 import sendgrid
+from fastapi import HTTPException
+from fastapi import Request
+from fastapi import status
+from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
+from fastapi.security import OAuth2
+from fastapi.security.utils import get_authorization_scheme_param
 from jose import jwt
 from passlib.context import CryptContext
 from sendgrid.helpers.mail import Mail, Email, To, Content
@@ -432,7 +440,7 @@ def verification_email_template(code: str):
 
 async def send_email(recipient: str, code: str):
     """
-    Send an email to the specified recipient containing the verification code.
+    Email to the specified recipient containing the verification code.
 
     Parameters:
         recipient (str): The email address of the recipient.
@@ -539,3 +547,97 @@ def create_refresh_token(subject: Union[str, Any], expires_delta: int = None) ->
     to_encode = {"exp": expires_delta, "sub": str(subject)}
     encoded_jwt = jwt.encode(to_encode, JWT_REFRESH_SECRET_KEY, ALGORITHM)
     return encoded_jwt
+
+
+class OAuth2PasswordBearerWithCookie(OAuth2):
+    """
+    An extension of OAuth2 authentication for FastAPI that allows retrieving the access token from an httpOnly cookie.
+
+    This class extends the OAuth2 class provided by FastAPI to enable authentication using a Bearer token stored in
+    an httpOnly cookie. It overrides the `__call__` method to retrieve the access token from the cookie and authenticate
+    the user based on the Bearer scheme.
+
+    Parameters:
+        tokenUrl (str): The URL to obtain the token from. This will be used to construct the OAuth2 flow.
+        scheme_name (Optional[str], optional): The name of the authentication scheme. Defaults to None.
+        scopes (Optional[Dict[str, str]], optional): The dictionary of scopes for the OAuth2 flow. Defaults to None.
+        auto_error (bool, optional): If set to True, the authentication will raise an HTTPException if not authenticated.
+                                    If set to False, it will return None instead. Defaults to True.
+
+    Returns:
+        Optional[str]: The access token extracted from the httpOnly cookie, or None if not authenticated.
+
+    Raises:
+        HTTPException: If authentication fails and `auto_error` is set to True, it will raise an HTTPException with
+                       status code 401 (UNAUTHORIZED) and the "WWW-Authenticate" header set to "Bearer".
+
+    Example:
+        # Initialize OAuth2PasswordBearerWithCookie
+        oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="token")
+
+        # Use it in a FastAPI route
+        @app.get("/protected/")
+        async def protected_route(token: str = Depends(oauth2_scheme)):
+            if token:
+                return {"message": "Access granted!"}
+            return {"message": "Access denied!"}
+
+    Note:
+        Make sure that the access token is stored in an httpOnly cookie with the name "access_token". The cookie will
+        be accessed from the incoming request to authenticate the user.
+
+    """
+
+    def __init__(
+        self,
+        tokenUrl: str,
+        scheme_name: Optional[str] = None,
+        scopes: Optional[Dict[str, str]] = None,
+        auto_error: bool = True,
+    ):
+        """
+        Initialize the OAuth2PasswordBearerWithCookie instance.
+
+        Args:
+            tokenUrl (str): The URL to obtain the token from. This will be used to construct the OAuth2 flow.
+            scheme_name (Optional[str], optional): The name of the authentication scheme. Defaults to None.
+            scopes (Optional[Dict[str, str]], optional): The dictionary of scopes for the OAuth2 flow. Defaults to None.
+            auto_error (bool, optional): If set to True, the authentication will raise an HTTPException if not authenticated.
+                                        If set to False, it will return None instead. Defaults to True.
+
+        """
+        if not scopes:
+            scopes = {}
+        flows = OAuthFlowsModel(password={"tokenUrl": tokenUrl, "scopes": scopes})
+        super().__init__(flows=flows, scheme_name=scheme_name, auto_error=auto_error)
+
+    async def __call__(self, request: Request) -> Optional[str]:
+        """
+        Override the __call__ method to authenticate the user based on the Bearer token in the httpOnly cookie.
+
+        Args:
+            request (Request): The incoming HTTP request.
+
+        Returns:
+            Optional[str]: The access token extracted from the httpOnly cookie, or None if not authenticated.
+
+        Raises:
+            HTTPException: If authentication fails and `auto_error` is set to True, it will raise an HTTPException with
+                           status code 401 (UNAUTHORIZED) and the "WWW-Authenticate" header set to "Bearer".
+
+        """
+        authorization: str = request.cookies.get(
+            "access_token"
+        )  # changed to accept access token from httpOnly Cookie
+
+        scheme, param = get_authorization_scheme_param(authorization)
+        if not authorization or scheme.lower() != "bearer":
+            if self.auto_error:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Not authenticated",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            else:
+                return None
+        return param

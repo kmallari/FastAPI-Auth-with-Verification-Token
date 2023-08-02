@@ -61,6 +61,7 @@ class VerificationToken(SQLModel, table=True):
         The verification token is used for account verification in the application.
 
     """
+
     id: Optional[str] = Field(
         primary_key=True,
         max_length=36,

@@ -44,27 +44,25 @@ Controllers:
         Controller function to verify a user's account using the verification token.
 """
 
-from fastapi import APIRouter, Depends
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from starlette.requests import Request
+from fastapi import APIRouter, Depends, Response
+from fastapi.security import OAuth2PasswordRequestForm
 
 from db.models.user import User
 from src.controllers import auth_controller
 from src.dependencies import get_current_active_user
-from src.schemas import JSONTokens, Ok
+from src.schemas import JSONTokens, Ok, Token
+from src.utils.auth_utils import OAuth2PasswordBearerWithCookie
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", scheme_name="JWT")
 
 
 @router.post("/google")
-async def google_login(request: Request, code: str):
+async def google_login(token: Token):
     """
     Authenticate a user using the Google OAuth2.0 authorization code.
 
     Parameters:
-        request (Request): The HTTP request object.
-        code (str): The authorization code received from Google OAuth2.0 callback.
+        token (Token): The authorization code received from Google OAuth2.0 callback.
 
     Returns:
         dict: A dictionary containing access_token and refresh_token for the authenticated user.
@@ -72,7 +70,7 @@ async def google_login(request: Request, code: str):
     Raises:
         HTTPException: If there's an error during the authentication process or user creation.
     """
-    return await auth_controller.google(code)
+    return await auth_controller.google(token.token)
 
 
 @router.post(
@@ -95,7 +93,7 @@ async def create_user(user: User):
 
 
 @router.post("/login", response_model=JSONTokens)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
     """
     Log in an existing user with the provided email and password.
 
@@ -108,7 +106,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     Raises:
         HTTPException: If the user is not found or if the provided email and password are incorrect.
     """
-    return await auth_controller.login(form_data.username, form_data.password)
+    return await auth_controller.login(response, form_data.username, form_data.password)
 
 
 @router.post("/verify/new", response_model=Ok)
@@ -145,3 +143,6 @@ async def verify_user(token: str, user: User = Depends(get_current_active_user))
         HTTPException: If there's an error during the verification process.
     """
     return await auth_controller.verify_user(user.id, token)
+
+
+oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="/auth/login")

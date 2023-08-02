@@ -44,6 +44,7 @@ class User(SQLModel, table=True):
         disabled (Optional[bool]): A flag indicating whether the user is disabled.
         created_at (int): The Unix timestamp (seconds since 1970) when the user was created.
     """
+
     id: str = Field(
         primary_key=True,
         default_factory=lambda: str(uuid.uuid4()),

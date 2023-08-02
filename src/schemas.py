@@ -18,3 +18,7 @@ class JSONTokens(BaseModel):
 
 class Ok(BaseModel):
     ok: bool
+
+
+class Token(BaseModel):
+    token: str

@@ -19,7 +19,8 @@ from datetime import datetime
 from urllib.parse import unquote
 
 import requests
-from fastapi import HTTPException, status
+from fastapi import HTTPException, Response, status
+
 from db.models.user import User
 from src.constants import (
     GOOGLE_CLIENT_ID,
@@ -40,12 +41,12 @@ from src.utils.auth_utils import (
 )
 
 
-async def google(code: str):
+async def google(token: str):
     """
     Authenticate a user using the Google OAuth2.0 authorization code.
 
     Parameters:
-        code (str): The authorization code received from Google OAuth2.0 callback.
+        token (str): The authorization code received from Google OAuth2.0 callback.
 
     Returns:
         dict: A dictionary containing access_token and refresh_token for the authenticated user.
@@ -54,10 +55,10 @@ async def google(code: str):
         HTTPException: If there's an error during the authentication process or user creation.
     """
     try:
-        code = unquote(code)
+        token = unquote(token)
         token_url = "https://oauth2.googleapis.com/token"
         token_payload = {
-            "code": code,
+            "code": token,
             "client_id": GOOGLE_CLIENT_ID,
             "client_secret": GOOGLE_CLIENT_SECRET,  # Replace with your actual Google client secret
             "redirect_uri": f"{CLIENT_URL}/auth/google/callback",
@@ -158,11 +159,12 @@ async def create_user(user: User):
         ) from e
 
 
-async def login(email: str, password: str):
+async def login(response: Response, email: str, password: str):
     """
     Log in an existing user with the provided email and password.
 
     Parameters:
+        response (Response): The response object.
         email (str): The email of the user.
         password (str): The password of the user.
 
@@ -185,8 +187,14 @@ async def login(email: str, password: str):
             status_code=status.HTTP_404_NOT_FOUND, detail="Incorrect email or password"
         )
 
+    access_token = create_access_token(user.email)
+
+    response.set_cookie(
+        key="access_token", value=f"Bearer {access_token}", httponly=True
+    )
+
     return {
-        "access_token": create_access_token(user.email),
+        "access_token": access_token,
         "refresh_token": create_refresh_token(user.email),
     }
 
